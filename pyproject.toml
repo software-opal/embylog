@@ -8,7 +8,8 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
-    "cformat>=20.1.0",
+    "machofile>=2026.2.10",
+    "macholib>=1.16.4",
     "pyelftools>=0.33",
 ]
 
@@ -18,3 +19,10 @@ embylog = "embylog:main"
 [build-system]
 requires = ["uv_build>=0.12.19,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "cformat>=20.1.0",
+    "black>=26.10.1",
+    "isort>=9.0.2",
+]
