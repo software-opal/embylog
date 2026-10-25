@@ -1,0 +1,39 @@
+version = 1
+revision = 3
+requires-python = ">=3.14"
+
+[[package]]
+name = "cformat"
+version = "20.1.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9e/87/97cb3cbb7504a51e99f0e4ee7b3c827a5f6c54e2f662ce042208d5d997ed/cformat-20.1.0-py3-none-macosx_10_15_x86_64.whl", hash = "sha256:98c04d0ef05ce01eb36f24cc96f6b3cc5fdec95a95d1156a5868d26223bd3cd1", size = 1643543, upload-time = "2026-03-23T03:03:09.821Z" },
+    { url = "https://files.pythonhosted.org/packages/00/37/abbdb628f7cc3a9e4619cb1917400899a1e1624fe09e856714c52111c849/cformat-20.1.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:d040256dd7d3bfd559bccf41ca91d038b34178d7e9d727dd9252c2d35c6b18aa", size = 1652293, upload-time = "2026-03-23T03:03:11.072Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/34/e717f80cfc8c3031292c2807c62ae331c3daf839eaaa9319727a014a4468/cformat-20.1.0-py3-none-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:7615f7f046bdebbbdb7ca7aa2fe856a6054e48b209eefa478613fe4470289fbe", size = 1866049, upload-time = "2026-03-23T03:03:12.483Z" },
+    { url = "https://files.pythonhosted.org/packages/32/d9/1e6e5d965b771ba11392906681c175887e256f4ba0bbf0f0b0965d778d41/cformat-20.1.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:e9e284fdef2b4bdc5d72d35126462f6377ed04927d873cf5ac786229a85a8e66", size = 1866035, upload-time = "2026-03-23T03:03:13.668Z" },
+    { url = "https://files.pythonhosted.org/packages/df/9c/f215f7e9de589e2851ebc2e5a23625ac5e7a0a2080fa8d1c567d82f31213/cformat-20.1.0-py3-none-win_amd64.whl", hash = "sha256:07e2f280128549742e6304d5cb1b47fc0f39fd37aa7e5023f1ceaacfbaeb433f", size = 1274143, upload-time = "2026-03-23T03:03:14.736Z" },
+]
+
+[[package]]
+name = "embylog"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "cformat" },
+    { name = "pyelftools" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cformat", specifier = ">=20.1.0" },
+    { name = "pyelftools", specifier = ">=0.33" },
+]
+
+[[package]]
+name = "pyelftools"
+version = "0.33"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a3/11/767522582afab1b884d277de0e6e011640cb9d7292a38694b4b1a1df1ae8/pyelftools-0.33.tar.gz", hash = "sha256:660d82dcbeb8e83d1702bd97f223f761625da06111c0cc988eac6b8ab0c1b61f", size = 15068655, upload-time = "2026-05-29T12:56:22.553Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/46/2a/f9697576603dae937727827505a6126a066affb227034e77e6f9068910da/pyelftools-0.33-py3-none-any.whl", hash = "sha256:f215ad5f47d3f1373a21496a6c9e0707c622840d0622f23ff7ce08678b020036", size = 201178, upload-time = "2026-05-29T12:56:20.587Z" },
+]

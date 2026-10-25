@@ -1,0 +1,20 @@
+[project]
+name = "embylog"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Opal Symes", email = "code@opal.codes" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "cformat>=20.1.0",
+    "pyelftools>=0.33",
+]
+
+[project.scripts]
+embylog = "embylog:main"
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
