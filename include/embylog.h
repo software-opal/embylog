@@ -7,9 +7,8 @@
 
 size_t embylog_systick();
 
-void embylog_transmit(uint8_t x);
 void embylog_transmit_array(const uint8_t *v, size_t length);
-void embylog_start_frame(size_t msg_id);
+void embylog_start_frame(size_t msg_id, size_t pc);
 
 void embylog_internal_transmit_array(const uint8_t *v, const size_t length);
 
@@ -87,15 +86,23 @@ embylog_gen_type_fn_dfns(long);
 #if defined(__MACH__)
 #define __embylog_msg_t const __attribute__((section("__TEXT,__embylog"))) char
 #define __embylog_align(X) 1
-#else
+#else /* !defined(__MACH__) */
 #define __embylog_msg_t const __attribute__((section(".embylog"))) char
 #define __embylog_align(X) alignof(X)
+#endif
+
+#if defined(__arm__)
+#define __embylog_program_counter __current_pc()
+#else
+#define __embylog_program_counter 0
 #endif
 
 #define embylogf(Message, ...)                                                 \
   do {                                                                         \
     static __embylog_msg_t __embylog_msg[] = Message;                          \
-    embylog_start_frame(((size_t)&__embylog_msg) / 1);                         \
+    embylog_start_frame(                                                       \
+        (((size_t)&__embylog_msg) / __embylog_align(__embylog_msg)),           \
+        __embylog_program_counter);                                            \
     EMBYLOGF_FOR_EACH(__embylogf_eval, __VA_ARGS__)                            \
   } while (0)
 

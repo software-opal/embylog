@@ -32,7 +32,7 @@ embylog_gen_type_fn(int);
 
 static uint32_t __embylog_last_tick = 0;
 __attribute__((weak)) size_t embylog_systick() { return 0; }
-void embylog_start_frame(size_t msg_id) {
+void embylog_start_frame(size_t msg_id, size_t pc) {
   if (__embylog_last_tick != embylog_systick()) {
     __embylog_last_tick = embylog_systick();
     embylog_transmit_array(message_systick_symbol, 2);
@@ -41,6 +41,9 @@ void embylog_start_frame(size_t msg_id) {
 
   embylog_transmit_array(message_start_symbol, 2);
   embylog_send_size_t(msg_id);
+
+  embylog_transmit_array(message_program_counter_symbol, 2);
+  embylog_send_size_t(pc);
 }
 
 void embylog_internal_transmit_array(const uint8_t *v, const size_t length) {
