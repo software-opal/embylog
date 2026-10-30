@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits.h>
 #include <stdalign.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -20,6 +21,12 @@ void embylog_internal_transmit_array(const uint8_t *v, const size_t length);
 #define embylog_gen_type_fn_dfns(TYPE) void embylog_send_##TYPE(TYPE x);
 
 void embylog_send_charptr(const char *x);
+
+#if SIZE_MAX == INT32_MAX
+#define EMBYLOG_PTR_SIZE 32
+#else
+#define EMBYLOG_PTR_SIZE 64
+#endif
 
 // embylog_gen_type_fn_dfns(uint8_t);
 // embylog_gen_type_fn_dfns(uint16_t);
@@ -85,11 +92,11 @@ embylog_gen_type_fn_dfns(long);
 
 #if defined(__MACH__)
 #define __embylog_msg_t const __attribute__((section("__TEXT,__embylog"))) char
-#define __embylog_align(X) 1
 #else /* !defined(__MACH__) */
 #define __embylog_msg_t const __attribute__((section(".embylog"))) char
-#define __embylog_align(X) alignof(X)
 #endif
+
+#define __embylog_align(X) alignof(typeof(X))
 
 #if defined(__arm__)
 #define __embylog_program_counter __current_pc()
