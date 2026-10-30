@@ -3,7 +3,6 @@
 #include <stdalign.h>
 #include <stdarg.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <unistd.h>
 
 size_t embylog_systick();
@@ -23,40 +22,51 @@ void embylog_internal_transmit_array(const uint8_t *v, const size_t length);
 
 void embylog_send_charptr(const char *x);
 
+// embylog_gen_type_fn_dfns(uint8_t);
+// embylog_gen_type_fn_dfns(uint16_t);
+#define embylog_send_uint8_t(X) embylog_send_uint32_t((uint32_t)X)
+#define embylog_send_uint16_t(X) embylog_send_uint32_t((uint32_t)X)
 embylog_gen_type_fn_dfns(uint32_t);
 embylog_gen_type_fn_dfns(uint64_t);
-embylog_gen_type_fn_dfns(ssize_t);
 embylog_gen_type_fn_dfns(size_t);
+embylog_gen_type_fn_dfns(int);
+embylog_gen_type_fn_dfns(long);
 
-#define embylogf_send(X) __embylogf_send_size_t(X)
+#define __embylogf_eval(X) __embylogf_send_size_t(X);
 
 #define __embylogf_send_size_t(X)                                              \
   _Generic((X),                                                                \
-      size_t: emby_log_send_size_t(X),                                         \
-      ssize_t: emby_log_send_ssize_t(X),                                       \
-      char *: embylog_send_charptr,                                            \
-      const char *: embylog_send_charptr,                                      \
+      size_t: embylog_send_size_t(X),                                          \
+      ssize_t: embylog_send_size_t(X),                                         \
       default: __embylogf_send_int8_to_64(X))
 
 #define __embylogf_send_int8_to_64(X)                                          \
   _Generic((X),                                                                \
-      int8_t: emby_log_send_int8_t,                                            \
-      uint8_t: emby_log_send_uint8_t,                                          \
+      int8_t: embylog_send_uint8_t((uint8_t)X),                                \
+      uint8_t: embylog_send_uint8_t((uint8_t)X),                               \
                                                                                \
-      int16_t: emby_log_send_int16_t,                                          \
-      uint16_t: emby_log_send_uint16_t,                                        \
+      int16_t: embylog_send_uint16_t(X),                                       \
+      uint16_t: embylog_send_uint16_t(X),                                      \
                                                                                \
-      int32_t: emby_log_send_int32_t,                                          \
-      uint32_t: emby_log_send_uint32_t,                                        \
+      int32_t: embylog_send_uint32_t(X),                                       \
+      uint32_t: embylog_send_uint32_t(X),                                      \
                                                                                \
-      int64_t: emby_log_send_int64_t,                                          \
-      uint64_t: emby_log_send_uint64_t,                                        \
-      default: __embylogf_send_other_int_types)
+      int64_t: embylog_send_uint64_t(X),                                       \
+      uint64_t: embylog_send_uint64_t(X),                                      \
+      default: __embylogf_send_other_int_types(X))
 
 #define __embylogf_send_other_int_types(X)                                     \
   _Generic((X),                                                                \
-      unsigned: emby_log_send_unsigned,                                        \
-      int: emby_log_send_int,                                                  \
+      unsigned int: embylog_send_int(X),                                       \
+      int: embylog_send_int(X),                                                \
+      unsigned long: embylog_send_long(X),                                     \
+      long: embylog_send_long(X),                                              \
+      default: __embylogf_send_charptr(X))
+
+#define __embylogf_send_charptr(X)                                             \
+  _Generic((X),                                                                \
+      char *: embylog_send_charptr,                                            \
+      const char *: embylog_send_charptr,                                      \
       default: embylog_send_size_t)(X)
 
 #define EMBYLOGF_EXPAND_1(...) __VA_ARGS__
@@ -74,28 +84,18 @@ embylog_gen_type_fn_dfns(size_t);
       __VA_OPT__(EMBYLOGF_FOR_EACH_AGAIN EMBYLOGF_PARENS(macro, __VA_ARGS__))
 #define EMBYLOGF_FOR_EACH_AGAIN() EMBYLOGF_FOR_EACH_HELPER
 
-#define __embylogf_eval(X) embylogf_send(X);
-
-#define EMBYLOG_ESCAPE_SYMBOL 0x42
-#define EMBYLOG_START_OF_FRAME 0x00
-#define EMBYLOG_START_OF_SYSTICK 0x01
-#define EMBYLOG_START_OF_HEXDUMP 0x02
-#define EMBYLOG_START_OF_PROGRAM_COUNTER 0x02
-
 #if defined(__MACH__)
-#define msg_t static const __attribute__((section("__TEXT,__embylog"))) char
+#define __embylog_msg_t const __attribute__((section("__TEXT,__embylog"))) char
+#define __embylog_align(X) 1
 #else
-#define msg_t __attribute__((section(".embylog"))) const char
+#define __embylog_msg_t const __attribute__((section(".embylog"))) char
+#define __embylog_align(X) alignof(X)
 #endif
-
-extern msg_t MSG_OFFSET[];
-
-extern size_t __embylog_start;
 
 #define embylogf(Message, ...)                                                 \
   do {                                                                         \
-    static msg_t __embylog_msg[] = Message;                                    \
-    embylog_start_frame(((size_t)&__embylog_msg) / alignof(&__embylog_msg));   \
+    static __embylog_msg_t __embylog_msg[] = Message;                          \
+    embylog_start_frame(((size_t)&__embylog_msg) / 1);                         \
     EMBYLOGF_FOR_EACH(__embylogf_eval, __VA_ARGS__)                            \
   } while (0)
 

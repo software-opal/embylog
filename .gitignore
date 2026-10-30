@@ -16,3 +16,6 @@ CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+*.a
+*.out
+embylog-example
