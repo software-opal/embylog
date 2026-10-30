@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
+project(EmbyLog)
 
 add_library(embylog STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/embylog.c
