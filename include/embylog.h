@@ -30,50 +30,50 @@ void embylog_send_charptr(const char *x);
 
 // embylog_gen_type_fn_dfns(uint8_t);
 // embylog_gen_type_fn_dfns(uint16_t);
-#define embylog_send_uint8_t(X) embylog_send_uint32_t((uint32_t)X)
-#define embylog_send_uint16_t(X) embylog_send_uint32_t((uint32_t)X)
+#define embylog_send_uint8_t embylog_send_uint32_t
+#define embylog_send_uint16_t embylog_send_uint32_t
 embylog_gen_type_fn_dfns(uint32_t);
 embylog_gen_type_fn_dfns(uint64_t);
 embylog_gen_type_fn_dfns(size_t);
 embylog_gen_type_fn_dfns(int);
 embylog_gen_type_fn_dfns(long);
 
-#define __embylogf_eval(X) __embylogf_send_size_t(X);
+#define __embylogf_eval(X) __embylogf_send_size_t(X)(X);
 
 #define __embylogf_send_size_t(X)                                              \
   _Generic((X),                                                                \
-      size_t: embylog_send_size_t(X),                                          \
-      ssize_t: embylog_send_size_t(X),                                         \
+      size_t: embylog_send_size_t,                                          \
+      ssize_t: embylog_send_size_t,                                         \
       default: __embylogf_send_int8_to_64(X))
 
 #define __embylogf_send_int8_to_64(X)                                          \
   _Generic((X),                                                                \
-      int8_t: embylog_send_uint8_t((uint8_t)X),                                \
-      uint8_t: embylog_send_uint8_t((uint8_t)X),                               \
+      int8_t: embylog_send_uint8_t,                                \
+      uint8_t: embylog_send_uint8_t,                               \
                                                                                \
-      int16_t: embylog_send_uint16_t(X),                                       \
-      uint16_t: embylog_send_uint16_t(X),                                      \
+      int16_t: embylog_send_uint16_t,                                       \
+      uint16_t: embylog_send_uint16_t,                                      \
                                                                                \
-      int32_t: embylog_send_uint32_t(X),                                       \
-      uint32_t: embylog_send_uint32_t(X),                                      \
+      int32_t: embylog_send_uint32_t,                                       \
+      uint32_t: embylog_send_uint32_t,                                      \
                                                                                \
-      int64_t: embylog_send_uint64_t(X),                                       \
-      uint64_t: embylog_send_uint64_t(X),                                      \
+      int64_t: embylog_send_uint64_t,                                       \
+      uint64_t: embylog_send_uint64_t,                                      \
       default: __embylogf_send_other_int_types(X))
 
 #define __embylogf_send_other_int_types(X)                                     \
   _Generic((X),                                                                \
-      unsigned int: embylog_send_int(X),                                       \
-      int: embylog_send_int(X),                                                \
-      unsigned long: embylog_send_long(X),                                     \
-      long: embylog_send_long(X),                                              \
+      unsigned int: embylog_send_int,                                       \
+      int: embylog_send_int,                                                \
+      unsigned long: embylog_send_long,                                     \
+      long: embylog_send_long,                                              \
       default: __embylogf_send_charptr(X))
 
 #define __embylogf_send_charptr(X)                                             \
   _Generic((X),                                                                \
       char *: embylog_send_charptr,                                            \
       const char *: embylog_send_charptr,                                      \
-      default: embylog_send_size_t)(X)
+      default: embylog_send_size_t)
 
 #define EMBYLOGF_EXPAND_1(...) __VA_ARGS__
 #define EMBYLOGF_EXPAND_2(...) EMBYLOGF_EXPAND_1(EMBYLOGF_EXPAND_1(__VA_ARGS__))

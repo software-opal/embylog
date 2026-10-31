@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
+set(CMAKE_C_FLAGS  "-Wall")
+set(CMAKE_CXX_FLAGS  "-Wall")
 project(embylog)
 
 add_library(embylog STATIC
