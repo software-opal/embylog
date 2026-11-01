@@ -21,8 +21,8 @@ target_include_directories(embylog
 # add custom target
 
 
-add_executable(embylog-example
-  ${CMAKE_SOURCE_DIR}/example/main.c
+add_executable(embylog-example EXCLUDE_FROM_ALL
+  ${CMAKE_CURRENT_SOURCE_DIR}/example/main.c
 )
 target_link_libraries(embylog-example
   PUBLIC embylog
