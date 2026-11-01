@@ -10,6 +10,8 @@ inline void embylog_transmit_array(const uint8_t *v, size_t length) {
 }
 
 int main(int a, char **args) {
-  embylogf("Hello world%d", (uint64_t)0x42024203420142);
-  embylogf("Goodbye crewel world%d", (int64_t)0x42024203420142);
+  const uint64_t val = 0x42024203420142;
+  const int64_t signed_val = 0x42024203420142;
+  embylogf("Hello world%d", val);
+  embylogf("Goodbye crewel world%d", signed_val);
 }

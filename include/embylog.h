@@ -4,7 +4,7 @@
 #include <stdalign.h>
 #include <stdarg.h>
 #include <stdint.h>
-#include <unistd.h>
+#include <stddef.h>
 
 size_t embylog_systick();
 
@@ -38,42 +38,14 @@ embylog_gen_type_fn_dfns(size_t);
 embylog_gen_type_fn_dfns(int);
 embylog_gen_type_fn_dfns(long);
 
-#define __embylogf_eval(X) __embylogf_send_size_t(X)(X);
-
-#define __embylogf_send_size_t(X)                                              \
-  _Generic((X),                                                                \
-      size_t: embylog_send_size_t,                                          \
-      ssize_t: embylog_send_size_t,                                         \
-      default: __embylogf_send_int8_to_64(X))
-
-#define __embylogf_send_int8_to_64(X)                                          \
-  _Generic((X),                                                                \
-      int8_t: embylog_send_uint8_t,                                \
-      uint8_t: embylog_send_uint8_t,                               \
-                                                                               \
-      int16_t: embylog_send_uint16_t,                                       \
-      uint16_t: embylog_send_uint16_t,                                      \
-                                                                               \
-      int32_t: embylog_send_uint32_t,                                       \
-      uint32_t: embylog_send_uint32_t,                                      \
-                                                                               \
-      int64_t: embylog_send_uint64_t,                                       \
-      uint64_t: embylog_send_uint64_t,                                      \
-      default: __embylogf_send_other_int_types(X))
-
-#define __embylogf_send_other_int_types(X)                                     \
-  _Generic((X),                                                                \
-      unsigned int: embylog_send_int,                                       \
-      int: embylog_send_int,                                                \
-      unsigned long: embylog_send_long,                                     \
-      long: embylog_send_long,                                              \
-      default: __embylogf_send_charptr(X))
-
-#define __embylogf_send_charptr(X)                                             \
-  _Generic((X),                                                                \
-      char *: embylog_send_charptr,                                            \
-      const char *: embylog_send_charptr,                                      \
-      default: embylog_send_size_t)
+#define __embylogf_eval(X) embylogf_send(X);
+#define embylogf_send(X)                                                      \
+  _Generic((X),                                                               \
+      char*: embylog_send_charptr,                                            \
+      const char*: embylog_send_charptr,                                      \
+      uint32_t: embylog_send_uint32_t,                                        \
+      uint64_t: embylog_send_uint64_t,                                        \
+      default: embylog_send_size_t)(X)
 
 #define EMBYLOGF_EXPAND_1(...) __VA_ARGS__
 #define EMBYLOGF_EXPAND_2(...) EMBYLOGF_EXPAND_1(EMBYLOGF_EXPAND_1(__VA_ARGS__))
@@ -99,7 +71,8 @@ embylog_gen_type_fn_dfns(long);
 #define __embylog_align(X) alignof(typeof(X))
 
 #if defined(__arm__)
-#define __embylog_program_counter __current_pc()
+#define __embylog_program_counter 0
+// __current_pc()
 #else
 #define __embylog_program_counter 0
 #endif

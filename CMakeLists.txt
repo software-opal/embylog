@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
 set(CMAKE_C_FLAGS  "-Wall")
+set(CMAKE_SYSTEM_NAME Generic)
+
+set( CMAKE_SYSTEM_NAME      "Generic"   )
+set( CMAKE_SYSTEM_PROCESSOR "Arm Cortex-M/Cortex-R" )
+
+set(CMAKE_SYSTEM_VERSION "0.0.0")
 set(CMAKE_CXX_FLAGS  "-Wall")
 project(embylog)
 
