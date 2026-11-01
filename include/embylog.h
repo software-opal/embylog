@@ -72,8 +72,8 @@ embylog_gen_type_fn_dfns(long);
 #define __embylog_align(X) alignof(typeof(X))
 
 #if defined(__arm__)
-#define __embylog_program_counter 0
-// __current_pc()
+unsigned int __current_pc(void);
+#define __embylog_program_counter __current_pc()
 #else
 #define __embylog_program_counter 0
 #endif
@@ -82,7 +82,7 @@ embylog_gen_type_fn_dfns(long);
   do {                                                                         \
     static __embylog_msg_t __embylog_msg[] = Message;                          \
     embylog_start_frame(                                                       \
-        (((size_t)&__embylog_msg) / __embylog_align(__embylog_msg)),           \
+        (((size_t)&__embylog_msg) / __embylog_align(&__embylog_msg)),          \
         __embylog_program_counter);                                            \
     EMBYLOGF_FOR_EACH(__embylogf_eval, __VA_ARGS__)                            \
   } while (0)
