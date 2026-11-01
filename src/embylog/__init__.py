@@ -1,6 +1,3 @@
-
-
-
 import asyncio
 import pathlib
 
@@ -11,7 +8,7 @@ from embylog.async_impl import elf_watcher, stream_reader, utils
 
 def main() -> None:
     print("Hello from embylog!")
-    asyncio.run(main_loop('1', '2'))
+    asyncio.run(main_loop("1", "2"))
 
 
 async def main_loop(f: pathlib.Path, i: pathlib.Path):
@@ -24,4 +21,3 @@ async def main_loop(f: pathlib.Path, i: pathlib.Path):
         async with await file_opener as file:
             async for type, msg in stream_reader.iterate_messages(file, stop_event):
                 print(type, msg)
-
