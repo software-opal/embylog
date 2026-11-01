@@ -21,6 +21,7 @@ void embylog_internal_transmit_array(const uint8_t *v, const size_t length);
 #define embylog_gen_type_fn_dfns(TYPE) void embylog_send_##TYPE(TYPE x);
 
 void embylog_send_charptr(const char *x);
+void embylog_hexdump(const void *value, size_t length);
 
 #if SIZE_MAX == INT32_MAX
 #define EMBYLOG_PTR_SIZE 32

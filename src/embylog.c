@@ -39,13 +39,13 @@ void embylog_start_frame(size_t msg_id, size_t pc) {
     embylog_send_size_t(__embylog_last_tick);
   }
 
-  embylog_transmit_array(message_start_symbol, 2);
-  embylog_send_size_t(msg_id);
-
   if (pc != 0) {
     embylog_transmit_array(message_program_counter_symbol, 2);
     embylog_send_size_t(pc);
   }
+
+  embylog_transmit_array(message_start_symbol, 2);
+  embylog_send_size_t(msg_id);
 }
 
 void embylog_internal_transmit_array(const uint8_t *v, const size_t length) {
@@ -57,7 +57,7 @@ void embylog_send_charptr(const char *value) {
   embylog_internal_transmit_array((uint8_t *)&value, sizeof(value));
 }
 
-void embylog_hexdump(char *value, size_t length) {
+void embylog_hexdump(const void *value, size_t length) {
   embylog_transmit_array(message_hexdump_symbol, 2);
-  embylog_internal_transmit_array((uint8_t *)&value, sizeof(value));
+  embylog_internal_transmit_array((const uint8_t *)value, length);
 }
