@@ -4,6 +4,8 @@ import typing as typ
 
 import anyio
 
+from embylog.async_impl import utils
+
 
 class MsgType(enum.Enum):
     PREAMBLE = None
@@ -17,14 +19,9 @@ async def iterate_messages(
     file: anyio.AsyncFile, stop_event: asyncio.Event
 ) -> typ.AsyncIterator[typ.Tuple[MsgType, bytes]]:
     async with asyncio.TaskGroup() as tg, file:
-        tg.create_task(cancel_on_stop(tg, stop_event))
+        tg.create_task(utils.cancel_on_stop(tg, stop_event))
         async for msg in do_iterate_messages(file, tg, stop_event):
             yield msg
-
-
-async def cancel_on_stop(tg: asyncio.TaskGroup, stop_event: asyncio.Event):
-    await stop_event.wait()
-    tg.cancel()
 
 
 async def read_byte(
