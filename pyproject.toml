@@ -6,11 +6,12 @@ readme = "README.md"
 authors = [
     { name = "Opal Symes", email = "code@opal.codes" }
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.15"
 dependencies = [
     "machofile>=2026.2.10",
     "macholib>=1.16.4",
     "pyelftools>=0.33",
+    "watchfiles>=1.3.0",
 ]
 
 [project.scripts]
