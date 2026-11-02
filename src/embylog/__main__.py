@@ -1,5 +1,4 @@
 import argparse
-import io
 import os
 import pathlib
 import typing as typ
@@ -10,14 +9,25 @@ from machofile import UniversalMachO
 from embylog.elf_parser import Embylog, p_int
 from embylog.msg_lookup import EmbylogTrace, MsgType
 
-filename = "../../build/Buttershock.elf"
-trace_log = "../../build/rtt-trice.bin"
 
-embylog = Embylog.load_elf(pathlib.Path(filename))
-tracelog = EmbylogTrace(pathlib.Path(trace_log).open('r+b')).messages()
+parser = argparse.ArgumentParser()
+parser.add_argument('-p', '--preamble', 
+                    action='store_true', default=False,
+                    help='Print out any data in the trace before the first valid embylog trace,')
+parser.add_argument('-e', '--elf', 
+                    required=True, 
+                    help='Elf binary containing the .embylog and .text sections')
+parser.add_argument('trace', # ToDo: can we make this stdin as well?
+                    help='binary tracelog containing trace messages ids and respectice parameters.')
 
+args = parser.parse_args()
+
+embylog = Embylog.load_elf(pathlib.Path(args.elf))
+tracelog = EmbylogTrace(pathlib.Path(args.trace).open('r+b')).messages()
+
+# ToDo: Uhh.... if there is no preamble, we might miss the first tracelog.
 _, preamble = next(tracelog)
-if preamble != None:
+if preamble != None and args.preamble:
     print(preamble.decode('utf-8'))
 
 systick = 0
