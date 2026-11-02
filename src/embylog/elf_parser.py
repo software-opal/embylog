@@ -8,6 +8,22 @@ from elftools.dwarf.dwarfinfo import DWARFInfo
 from .msg_lookup import ByteIntParser, RawMessageBlockFetcher
 
 
+class p_int(int):
+    """Wrapper for int where __str__ will do a lookup in .text as if it was a pointer.
+    Usefule for string modulus '%' formatting:
+    https://docs.python.org/3.12/library/stdtypes.html#printf-style-string-formatting
+    """
+
+    _strings = None
+
+    def __new__(cls, data=None, strings: StringLookup | None = None):
+        obj = super(p_int, cls).__new__(cls, data)
+        obj._strings = strings
+        return obj
+    
+    def __str__(self):
+        return self._strings.lookup(self)
+
 class StringLookup:
     __cache: typ.Dict[int, typ.Tuple[int, int]]
     __addr: int
@@ -39,7 +55,7 @@ class AddrLookup:
     def __init__(self, dwarf: DWARFInfo):
         self.__dwarf = dwarf
 
-    def lookup(self, address: int) -> typ.Tuple[str, int]:
+    def addr2line(self, address: int) -> typ.Tuple[str, int] | None:
         """Copied from: https://github.com/eliben/pyelftools/blob/e40a070838548c1552297d1e5cb88f48fe96455f/examples/dwarf_decode_address.py#L72"""
         for cu in self.__dwarf.iter_CUs():
             lines = self.__dwarf.line_program_for_CU(cu)
@@ -53,27 +69,56 @@ class AddrLookup:
                     return (lines['file_entry'][previous.file - offset].name.decode('utf-8'), previous.line)
 
                 previous = line.state if not line.state.end_sequence else None
-        return ("", 0)
-        
+        return None
         
 
-def load_elf(elf: pathlib.Path) -> typ.Tuple[ByteIntParser, RawMessageBlockFetcher, StringLookup, AddrLookup| None]:
-    with elf.open("rb") as f:
-        elffile = ELFFile(f)
-        dwarf = None
-        parser = ByteIntParser(elffile.little_endian, elffile.elfclass)
-        print(f"size_t: {parser.pointer_bytes}, endian: {parser.byteorder}")
-        
-        text = elffile.get_section_by_name(".text")
-        if text is None:
-            raise ValueError("Failed to get .text section")
+class Embylog:
+    def __init__(self, parser: ByteIntParser, fetcher: RawMessageBlockFetcher, strings: StringLookup, addrs: AddrLookup | None):
+        self._parser = parser
+        self._fetcher = fetcher
+        self._strings = strings
+        self._addrs = addrs
 
-        if elffile.has_dwarf_info():
-            dwarf = AddrLookup(elffile.get_dwarf_info())
+    @property
+    def byteorder(self):
+        return self._parser.byteorder
 
-        section = elffile.get_section_by_name(".embylog")
-        if section is None:
-            raise ValueError("THOEUTHOUHOUTHOEUTH")
-        
-        block = RawMessageBlockFetcher(section.data())
-        return (parser, block, StringLookup(text), dwarf)
+    @property
+    def pointer_bytes(self):
+        return self._parser.pointer_bytes
+
+    def get_string(self, pointer: int) -> str:
+        """Looks up the pointer in .text and returns the string."""
+        self._strings.lookup(pointer)
+
+    def get_log(self, index: int) -> typ.Optional[str]:
+        return self._fetcher.find_message_from_offset(index * self._parser.pointer_bytes)
+
+    def addr2line(self, address: int) -> typ.Tuple[str, int] | None:
+        if self._addrs is None:
+            return None
+        return self._addrs.addr2line(address) 
+
+    @classmethod
+    def load_elf(cls, elf: pathlib.Path) -> Embylog:
+        with elf.open("rb") as f:
+            elffile = ELFFile(f)
+            dwarf = None
+            parser = ByteIntParser(elffile.little_endian, elffile.elfclass)
+            print(f"size_t: {parser.pointer_bytes}, endian: {parser.byteorder}")
+
+            section = elffile.get_section_by_name(".embylog")
+            if section is None:
+                raise ValueError("Failed to get .embylog section")
+            
+            text = elffile.get_section_by_name(".text")
+            if text is None:
+                raise ValueError("Failed to get .text section")
+
+            if elffile.has_dwarf_info():
+                dwarf = AddrLookup(elffile.get_dwarf_info())
+            
+            block = RawMessageBlockFetcher(section.data())
+            return cls(parser, block, StringLookup(text), dwarf)
+
+

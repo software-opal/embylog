@@ -1,8 +1,17 @@
 import dataclasses
+import io
 import typing as typ
+
+from enum import Enum
 
 EMBY_LOG_ESCAPE_SYMBOL = b"\x42"
 
+
+class MsgType(Enum):
+    MESSAGE = b'\x00'
+    SYSTICK = b'\x01'
+    HEXDUMP = b'\x02'
+    ADDRESS = b'\x03'
 
 class ByteIntParser:
 
@@ -55,16 +64,58 @@ class RawMessageBlockFetcher:
 
         return self.__marker_offset
 
-    def find_message_from_offset(self, offset_from_marker: int) -> typ.Optional[bytes]:
+    def find_message_from_offset(self, offset_from_marker: int) -> typ.Optional[str]:
         if offset_from_marker < 0 or (self.marker_offset + offset_from_marker) > len(self.raw_bytes):
             raise ValueError(f"Offset {offset_from_marker} falls outside of .embylog section ({len(self.raw_bytes)})")
+        
         if offset_from_marker not in self.__message_cache:
             # offset_from_marker = message_ptr - MARKER_ptr
             raw_offset = self.marker_offset + offset_from_marker
             end = self.raw_bytes.find(b"\0", raw_offset)
             # print(f"raw_offset: {raw_offset}, end: {end}")
             self.__message_cache[offset_from_marker] = (raw_offset, end)
+
         raw_offset, end = self.__message_cache[offset_from_marker]
         if (end - 1) < 0:
             return None
-        return self.raw_bytes[raw_offset:end]
+        
+        return self.raw_bytes[raw_offset:end].decode('utf-8')
+
+class EmbylogTrace:
+    def __init__(self, file: typ.BinaryIO):
+        self._file = file
+
+    def messages(self) -> typ.Iterator[typ.Tuple[MsgType, bytes]]:
+        while True:
+            type = None
+            read_bytes = bytearray()
+            while True:
+                byte = self._file.read(1)
+                if byte == None or byte == b'':
+                    return type, bytes(read_bytes)
+
+                if byte != b'\x42':
+                    read_bytes += byte
+                    continue
+
+                byte = self._file.read(1)
+                if byte == None or byte == b'':
+                    return type, bytes(read_bytes)
+
+                
+                if type != None:
+                    if byte == b'\x43':
+                        read_bytes += b'\x42'
+                    elif len(read_bytes) > 0:
+                        break
+                
+                try:
+                    type = MsgType(byte)
+                    if len(read_bytes) > 0:
+                        break
+                except ValueError:
+                    read_bytes += byte
+
+            self._file.seek(-2, io.SEEK_CUR)
+            # print(f"file: 0x{file.tell():X}")
+            yield type, bytes(read_bytes)
