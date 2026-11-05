@@ -105,7 +105,6 @@ class Embylog:
             elffile = ELFFile(f)
             dwarf = None
             parser = ByteIntParser(elffile.little_endian, elffile.elfclass)
-            print(f"size_t: {parser.pointer_bytes}, endian: {parser.byteorder}")
 
             section = elffile.get_section_by_name(".embylog")
             if section is None:

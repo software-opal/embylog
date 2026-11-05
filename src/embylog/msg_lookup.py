@@ -95,8 +95,9 @@ class EmbylogTrace:
         self._file = file
 
     def messages(self) -> typ.Iterator[typ.Tuple[MsgType, bytes]]:
+        next_type = None
         while True:
-            type = None
+            type = next_type
             read_bytes = bytearray()
             while True:
                 byte = self._file.read(1)
@@ -111,22 +112,18 @@ class EmbylogTrace:
                 if byte == None or byte == b'':
                     return type, bytes(read_bytes)
 
-                
-                if type != None:
-                    if byte == b'\x43':
-                        read_bytes += b'\x42'
-                    elif len(read_bytes) > 0:
-                        break
+                if type != None and byte == b'\x43':
+                    read_bytes += b'\x42'
                 
                 try:
-                    type = MsgType(byte)
-                    # Special case for when there was data before a valid start-of-frame.
+                    next_type = MsgType(byte)
                     if len(read_bytes) > 0:
-                        type = None
                         break
+                    type = next_type
                 except ValueError:
                     read_bytes += byte
 
-            self._file.seek(-2, io.SEEK_CUR)
-            # print(f"file: 0x{file.tell():X}")
-            yield type, bytes(read_bytes)
+            # self._file.seek(-2, io.SEEK_CUR)
+            # print(f"file: 0x{self._file.tell():X} -> {type} : {read_bytes.hex()}")
+            if len(read_bytes) > 0:
+                yield type, bytes(read_bytes)
