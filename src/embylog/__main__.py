@@ -1,13 +1,15 @@
 import argparse
 import os
+import colorama
 import pathlib
 import typing as typ
+import struct
 
 from elftools.elf.elffile import ELFFile
 from machofile import UniversalMachO
 
 from embylog.elf_parser import Embylog, p_int
-from embylog.msg_lookup import EmbylogTrace, MsgType
+from embylog.msg_lookup import EmbylogTrace, MsgType, Level
 
 
 parser = argparse.ArgumentParser()
@@ -39,12 +41,8 @@ for type, trace in tracelog:
         old_systick = systick
         systick = int.from_bytes(trace[:4], embylog.byteorder)
         if systick > (old_systick + 10):
-            print(f"{systick: 8}ms | {'':-<{width - 13}}")
-        continue
-
-    if type == MsgType.HEXDUMP:
-        for chunk in range(0, len(trace), 16):
-            print(f"{systick: 8}ms | {chunk:08X}: {trace[chunk:][:16].hex(' ', 2)}")
+            print(f"{'':-<{width}}")
+            print(colorama.Cursor.UP() + colorama.Cursor.BACK(1000) + f"{systick: 5}ms | ")
         continue
 
     if type == MsgType.ADDRESS:
@@ -57,17 +55,51 @@ for type, trace in tracelog:
             address = f"({filename:}:{line:})"
         continue
 
+    line = colorama.Style.RESET_ALL + f"{systick: 5}ms | "
+
+    if type == MsgType.HEXDUMP:
+        for chunk in range(0, len(trace), 16):
+            printable = "".join([chr(c) if 32 <= c <= 127 else '.' for c in trace[chunk:][:16]])
+            print(f"{line}{colorama.Fore.BLUE}H: {chunk:04X}: {trace[chunk:][:16].hex(' ', 2):41}{printable}{colorama.Style.RESET_ALL}")
+        continue
+
     if type == MsgType.MESSAGE:
-        params = [p_int(int.from_bytes(trace[p:][:4], embylog.byteorder), embylog._strings) for p in range(0, len(trace), 4)]
+        params = [p_int(int.from_bytes(trace[p:][:4], embylog.byteorder), embylog._strings) for p in range(4, len(trace), 4)]
         
-        msg_index = params[0]
+        level, param_count, msg_index = struct.unpack("<BBH", trace[:4])
         message = embylog.get_log(msg_index)
+
+        message = message.replace('%p', '0x%08x')
+
+        if param_count != len(params):
+            print(colorama.Fore.YELLOW + f"Warning, expected {param_count} parameters, got {len(params)} instead" + colorama.Style.RESET_ALL);
 
         # print(f"offset: 0x{msg_index:04X} -> {message}\n\t", params)
         try:
-            line = f"{systick: 8}ms | {message % tuple(params[1:])}"
-            print(f"{line:{width - len(address)}}{address}")
-            address = ""
+            level = Level(level)
+        except ValueError:
+            level = Level.NONE
+
+        try:
+            if level == level.TRACE:
+                line += colorama.Fore.CYAN + colorama.Style.DIM + 'T: '
+            elif level == level.DEBUG:
+                line += colorama.Fore.CYAN + 'D: '
+            elif level == level.INFO:
+                line += colorama.Fore.WHITE+ 'I: '
+            elif level == level.WARNING:
+                line += colorama.Fore.YELLOW + 'W: '
+            elif level == level.ERROR:
+                line += colorama.Fore.RED + 'E: '
+            elif level == level.FATAL:
+                line += colorama.Back.RED + colorama.Fore.YELLOW + 'F: '
+            
+            line += message % tuple(params) + colorama.Style.RESET_ALL
+            print(line)
+
+            if address:
+                print(colorama.Cursor.FORWARD(1000) + colorama.Cursor.UP() + colorama.Cursor.BACK(len(address) - 1) + address)
+                address = ""
         except TypeError:
             print(f"Could not format message {message} with params {params[1:]}.")
         continue

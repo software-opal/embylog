@@ -1,11 +1,5 @@
 #include <embylog.h>
 
-#define EMBYLOG_ESCAPE_SYMBOL 0x42
-#define EMBYLOG_START_OF_FRAME 0x00
-#define EMBYLOG_START_OF_SYSTICK 0x01
-#define EMBYLOG_START_OF_HEXDUMP 0x02
-#define EMBYLOG_START_OF_PROGRAM_COUNTER 0x03
-
 static const uint8_t message_start_symbol[2] = {EMBYLOG_ESCAPE_SYMBOL,
                                                 EMBYLOG_START_OF_FRAME};
 static const uint8_t message_systick_symbol[2] = {EMBYLOG_ESCAPE_SYMBOL,
@@ -14,6 +8,8 @@ static const uint8_t message_hexdump_symbol[2] = {EMBYLOG_ESCAPE_SYMBOL,
                                                   EMBYLOG_START_OF_HEXDUMP};
 static const uint8_t message_program_counter_symbol[2] = {
     EMBYLOG_ESCAPE_SYMBOL, EMBYLOG_START_OF_PROGRAM_COUNTER};
+static const uint8_t message_stamp_symbol[2] = {
+    EMBYLOG_ESCAPE_SYMBOL, EMBYLOG_START_OF_STAMP};
 static const uint8_t escape_symbol[2] = {EMBYLOG_ESCAPE_SYMBOL,
                                          EMBYLOG_ESCAPE_SYMBOL + 1};
 
@@ -32,9 +28,10 @@ embylog_gen_type_fn(int);
 
 static uint32_t __embylog_last_tick = 0;
 __attribute__((weak)) size_t embylog_systick() { return 0; }
-void embylog_start_frame(size_t msg_id, size_t pc) {
+void embylog_start_frame(const embylog_log *msg_id, size_t pc) {
   if (__embylog_last_tick != embylog_systick()) {
     __embylog_last_tick = embylog_systick();
+
     embylog_transmit_array(message_systick_symbol, 2);
     embylog_send_size_t(__embylog_last_tick);
   }
@@ -44,8 +41,7 @@ void embylog_start_frame(size_t msg_id, size_t pc) {
     embylog_send_size_t(pc);
   }
 
-  embylog_transmit_array(message_start_symbol, 2);
-  embylog_send_size_t(msg_id);
+  embylog_transmit_array((const uint8_t*)msg_id, sizeof(typeof(*msg_id)));
 }
 
 void embylog_internal_transmit_array(const uint8_t *v, const size_t length) {

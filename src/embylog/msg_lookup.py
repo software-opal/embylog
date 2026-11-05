@@ -13,6 +13,15 @@ class MsgType(Enum):
     HEXDUMP = b'\x02'
     ADDRESS = b'\x03'
 
+class Level(Enum):
+    NONE    = 0
+    FATAL   = 1
+    ERROR   = 2
+    WARNING = 3
+    INFO    = 4
+    DEBUG   = 5
+    TRACE   = 6
+
 class ByteIntParser:
 
     byteorder: typ.Literal["little", "big"]

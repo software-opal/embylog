@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.15"
 dependencies = [
+    "colorama>=0.4.6",
     "machofile>=2026.2.10",
     "macholib>=1.16.4",
     "pyelftools>=0.33",
