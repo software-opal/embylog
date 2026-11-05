@@ -111,7 +111,9 @@ class EmbylogTrace:
                 
                 try:
                     type = MsgType(byte)
+                    # Special case for when there was data before a valid start-of-frame.
                     if len(read_bytes) > 0:
+                        type = None
                         break
                 except ValueError:
                     read_bytes += byte

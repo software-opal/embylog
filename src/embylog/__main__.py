@@ -25,15 +25,14 @@ args = parser.parse_args()
 embylog = Embylog.load_elf(pathlib.Path(args.elf))
 tracelog = EmbylogTrace(pathlib.Path(args.trace).open('r+b')).messages()
 
-# ToDo: Uhh.... if there is no preamble, we might miss the first tracelog.
-_, preamble = next(tracelog)
-if preamble != None and args.preamble:
-    print(preamble.decode('utf-8'))
-
 systick = 0
 address = ""
 width = os.get_terminal_size().columns
 for type, trace in tracelog:
+    if  type == None and args.preamble:
+        print(trace.decode('utf-8'))
+        args.preamble = False
+        continue
     # print((type, trace.hex()))
 
     if type == MsgType.SYSTICK:
