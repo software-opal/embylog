@@ -1,6 +1,7 @@
 import dataclasses
-import io
+import io, os
 import typing as typ
+import time
 
 from enum import Enum
 
@@ -91,39 +92,62 @@ class RawMessageBlockFetcher:
         return self.raw_bytes[raw_offset:end].decode('utf-8')
 
 class EmbylogTrace:
-    def __init__(self, file: typ.BinaryIO):
+    def __init__(self, file: typ.BinaryIO, watch: bool = True):
         self._file = file
-
+        self.watch = watch
+        
     def messages(self) -> typ.Iterator[typ.Tuple[MsgType, bytes]]:
         next_type = None
         while True:
             type = next_type
             read_bytes = bytearray()
-            while True:
-                byte = self._file.read(1)
-                if byte == None or byte == b'':
+            try:
+                while True:
+                    # Check to see if the trace file was truncated. 
+                    if self._file.seekable():
+                        size = os.stat(self._file.fileno()).st_size
+                        t = self._file.tell() 
+                        if t > size:
+                            raise ValueError("File truncated.")
+
+                    byte = self._file.read(1)
+                    if byte == b'':
+                        if self.watch and self._file.seekable():
+                            time.sleep(0.1)
+                            continue
+                        return type, bytes(read_bytes)
+
+                    if byte != b'\x42':
+                        read_bytes += byte
+                        continue
+
+                    byte = self._file.read(1)
+                    if byte == b'':
+                        if self.watch and self._file.seekable():
+                            time.sleep(0.1)
+                            continue
+                        return type, bytes(read_bytes)
+
+                    if type != None and byte == b'\x43':
+                        read_bytes += b'\x42'
+                    
+                    try:
+                        next_type = MsgType(byte)
+                        if len(read_bytes) > 0:
+                            break
+                        type = next_type
+                    except ValueError:
+                        read_bytes += byte
+
+                # self._file.seek(-2, io.SEEK_CUR)
+                # print(f"file: 0x{self._file.tell():X} -> {type} : {read_bytes.hex()}")
+                if len(read_bytes) > 0:
+                    yield type, bytes(read_bytes)
+            except ValueError:
+                if self._file.closed:
                     return type, bytes(read_bytes)
+                raise
+            except KeyboardInterrupt:
+                break
+        return None, b''
 
-                if byte != b'\x42':
-                    read_bytes += byte
-                    continue
-
-                byte = self._file.read(1)
-                if byte == None or byte == b'':
-                    return type, bytes(read_bytes)
-
-                if type != None and byte == b'\x43':
-                    read_bytes += b'\x42'
-                
-                try:
-                    next_type = MsgType(byte)
-                    if len(read_bytes) > 0:
-                        break
-                    type = next_type
-                except ValueError:
-                    read_bytes += byte
-
-            # self._file.seek(-2, io.SEEK_CUR)
-            # print(f"file: 0x{self._file.tell():X} -> {type} : {read_bytes.hex()}")
-            if len(read_bytes) > 0:
-                yield type, bytes(read_bytes)

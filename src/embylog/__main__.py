@@ -16,15 +16,18 @@ from embylog.msg_lookup import EmbylogTrace, MsgType, Level
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--preamble', 
                     action='store_true', default=False,
-                    help='Print out any data in the trace before the first valid embylog trace,')
+                    help='Print out any data in the trace before the first valid embylog trace.')
+parser.add_argument('-w', '--watch', 
+                    action='store_true', default=False,
+                    help='Watch the ' + colorama.Fore.YELLOW + colorama.Style.BRIGHT + 'trace' + colorama.Style.RESET_ALL + ' input file for changes. Implied when <stdin> is used.')
 parser.add_argument('-e', '--elf', 
                     type=pathlib.Path,
                     required=True, 
-                    help='Elf binary containing the .embylog and .text sections')
+                    help='Elf binary containing the .embylog and .text sections.')
 parser.add_argument('trace', # ToDo: can we make this stdin as well?
                     type=pathlib.Path,
                     nargs='?',
-                    help='binary tracelog containing trace messages ids and respectice parameters.')
+                    help='Binary file containing embylog trace message ids and respective parameters.')
 
 args = parser.parse_args()
 
@@ -37,7 +40,7 @@ else:
     input = args.trace.open('r+b')
 
 with input:
-    tracelog = EmbylogTrace(input).messages()
+    tracelog = EmbylogTrace(input, watch=args.watch).messages()
 
     systick = 0
     address = ""
@@ -77,23 +80,24 @@ with input:
             continue
 
         if type == MsgType.MESSAGE:
-            params = [p_int(int.from_bytes(trace[p:][:4], embylog.byteorder), embylog._strings) for p in range(4, len(trace), 4)]
-            
-            level, param_count, msg_index = struct.unpack("<BBH", trace[:4])
-            message = embylog.get_log(msg_index)
-
-            message = message.replace('%p', '0x%08x')
-
-            if param_count != len(params):
-                print(colorama.Fore.YELLOW + f"Warning, expected {param_count} parameters, got {len(params)} instead" + colorama.Style.RESET_ALL);
-
-            # print(f"offset: 0x{msg_index:04X} -> {message}\n\t", params)
-            try:
-                level = Level(level)
-            except ValueError:
-                level = Level.NONE
 
             try:
+                params = [p_int(int.from_bytes(trace[p:][:4], embylog.byteorder), embylog._strings) for p in range(4, len(trace), 4)]
+                
+                level, param_count, msg_index = struct.unpack("<BBH", trace[:4])
+                message = embylog.get_log(msg_index)
+
+                message = message.replace('%p', '0x%08x')
+
+                if param_count != len(params):
+                    print(colorama.Fore.YELLOW + f"Warning, expected {param_count} parameters, got {len(params)} instead" + colorama.Style.RESET_ALL);
+
+                # print(f"offset: 0x{msg_index:04X} -> {message}\n\t", params)
+                try:
+                    level = Level(level)
+                except ValueError:
+                    level = Level.NONE
+
                 if level == level.TRACE:
                     line += colorama.Fore.CYAN + colorama.Style.DIM + 'T: '
                 elif level == level.DEBUG:
@@ -113,8 +117,10 @@ with input:
                 if address:
                     print(colorama.Cursor.FORWARD(1000) + colorama.Cursor.UP() + colorama.Cursor.BACK(len(address) - 1) + address)
                     address = ""
+            except struct.error:
+                print(colorama.Fore.YELLOW + f"Malformed trace {trace.hex()}" + colorama.Style.RESET_ALL)
             except TypeError:
-                print(f"Could not format message {message} with params {params[1:]}.")
+                print(colorama.Fore.YELLOW + f"Could not format message {message} with params {params[1:]}." + colorama.Style.RESET_ALL)
             continue
 
         
